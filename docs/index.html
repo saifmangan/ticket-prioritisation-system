@@ -17,6 +17,7 @@
         --red: #c2410c;
         --yellow: #b7791f;
         --green: #15803d;
+        --purple: #6d28d9;
         --shadow: 0 16px 34px rgba(23, 32, 42, 0.11);
       }
 
@@ -221,6 +222,24 @@
         color: var(--ink);
       }
 
+      .ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: #334155;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.22);
+        outline-offset: 2px;
+      }
+
+      button:hover {
+        filter: brightness(0.97);
+      }
+
       .dashboard {
         overflow: hidden;
       }
@@ -322,6 +341,150 @@
         line-height: 1.45;
       }
 
+      .operations {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .tool-panel {
+        padding: 20px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 12px;
+      }
+
+      .status::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--green);
+      }
+
+      .confidence-track {
+        height: 10px;
+        width: 100%;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e8eef5;
+        margin-top: 10px;
+      }
+
+      .confidence-fill {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--teal), var(--blue));
+        transition: width 180ms ease;
+      }
+
+      .queue {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .queue-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .queue-item.active {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+
+      .queue-item strong {
+        display: block;
+      }
+
+      .queue-item span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .chip {
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 6px 9px;
+      }
+
+      .activity {
+        max-height: 224px;
+        overflow: auto;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .activity li {
+        margin: 0;
+        padding: 10px 0;
+        border-bottom: 1px solid #edf2f7;
+      }
+
+      .activity small {
+        display: block;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        max-width: min(420px, calc(100vw - 40px));
+        border-radius: 8px;
+        background: #17202a;
+        color: #fff;
+        padding: 13px 15px;
+        box-shadow: var(--shadow);
+        opacity: 0;
+        transform: translateY(12px);
+        pointer-events: none;
+        transition:
+          opacity 180ms ease,
+          transform 180ms ease;
+        z-index: 20;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
       .demo-strip {
         margin-top: 26px;
         display: grid;
@@ -374,6 +537,11 @@
         line-height: 1.45;
       }
 
+      .price button {
+        width: 100%;
+        margin-top: 8px;
+      }
+
       footer {
         max-width: 1180px;
         margin: 0 auto;
@@ -386,6 +554,7 @@
         .intro,
         .workspace,
         .dashboard-body,
+        .operations,
         .pricing {
           grid-template-columns: 1fr;
         }
@@ -521,6 +690,7 @@
             <button class="primary" type="submit">Prioritise</button>
             <button class="secondary" type="button" id="reset">Reset</button>
           </div>
+          <div class="status" id="live-status">Live scoring ready</div>
         </form>
 
         <div class="panel dashboard">
@@ -544,7 +714,49 @@
             <h3>Customer-ready brief</h3>
             <p id="summary"></p>
             <p id="reply"></p>
+            <div class="toolbar" aria-label="Demo actions">
+              <button class="primary" type="button" id="copyReply">Copy reply</button>
+              <button class="secondary" type="button" id="exportJson">Export JSON</button>
+              <button class="ghost" type="button" id="createEscalation">Create escalation</button>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="operations" aria-label="Platform workspace">
+        <div class="panel tool-panel">
+          <h2>Queue intelligence</h2>
+          <p class="lead" style="font-size: 15px; margin-top: 8px">
+            Pick a queue item, edit the ticket, assign ownership, and watch the prioritisation update.
+          </p>
+          <div class="queue" id="queue"></div>
+        </div>
+        <div class="panel tool-panel">
+          <h2>Operations console</h2>
+          <label for="owner">Owner</label>
+          <select id="owner">
+            <option>Duty manager</option>
+            <option>Platform lead</option>
+            <option>Security lead</option>
+            <option>Revenue ops</option>
+            <option>Customer success</option>
+          </select>
+          <label for="playbook">Playbook</label>
+          <select id="playbook">
+            <option>Critical incident</option>
+            <option>Security handling</option>
+            <option>Renewal save</option>
+            <option>General support</option>
+          </select>
+          <div class="toolbar">
+            <button class="primary" type="button" id="assignOwner">Assign owner</button>
+            <button class="secondary" type="button" id="sendUpdate">Send update</button>
+          </div>
+          <div class="confidence-track" aria-label="Confidence">
+            <div class="confidence-fill" id="confidenceFill"></div>
+          </div>
+          <div class="chips" id="chips"></div>
+          <ul class="activity" id="activity" aria-live="polite"></ul>
         </div>
       </section>
 
@@ -568,16 +780,19 @@
           <h3>Starter</h3>
           <strong>GBP 99</strong>
           <p>Per month for small teams that need consistent triage and a shared dashboard.</p>
+          <button class="secondary plan-button" type="button" data-plan="Starter">Select Starter</button>
         </div>
         <div class="price">
           <h3>Growth</h3>
           <strong>GBP 399</strong>
           <p>Per month with API access, AI briefs, priority routing, and weekly risk reporting.</p>
+          <button class="primary plan-button" type="button" data-plan="Growth">Select Growth</button>
         </div>
         <div class="price">
           <h3>Enterprise</h3>
           <strong>Custom</strong>
           <p>SSO, audit exports, private model configuration, SLA rules, and white-label deployment.</p>
+          <button class="secondary plan-button" type="button" data-plan="Enterprise">Book Enterprise Demo</button>
         </div>
       </section>
     </main>
@@ -585,6 +800,7 @@
     <footer>
       Built as a deployable customer demo. Configure GitHub Pages or run the FastAPI/Streamlit app for deeper pilots.
     </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script>
       const scenarios = {
@@ -596,6 +812,8 @@
           users: 480,
           revenue: 25000,
           sla: 0.5,
+          owner: "Platform lead",
+          playbook: "Critical incident",
         },
         billing: {
           subject: "Need invoice corrected before renewal",
@@ -605,6 +823,8 @@
           users: 2,
           revenue: 1800,
           sla: 12,
+          owner: "Revenue ops",
+          playbook: "Renewal save",
         },
         security: {
           subject: "Possible security breach",
@@ -614,6 +834,8 @@
           users: 40,
           revenue: 8000,
           sla: 2,
+          owner: "Security lead",
+          playbook: "Security handling",
         },
         question: {
           subject: "Export question",
@@ -623,6 +845,8 @@
           users: 1,
           revenue: 0,
           sla: 48,
+          owner: "Customer success",
+          playbook: "General support",
         },
       };
 
@@ -646,12 +870,49 @@
         "production",
       ];
       const negativeWords = ["angry", "frustrated", "cancel", "leaving", "escalate", "complaint"];
+      const positiveWords = ["thanks", "great", "good", "appreciate"];
       const multipliers = { enterprise: 1.25, strategic: 1.22, premium: 1.15, standard: 1, free: 0.85 };
+      const fieldIds = ["subject", "message", "customer", "tier", "users", "revenue", "sla", "owner", "playbook"];
+      let latestResult = null;
+      let toastTimer = null;
 
       const el = (id) => document.getElementById(id);
 
-      function loadScenario(key) {
-        const item = scenarios[key];
+      function safeNumber(value, fallback) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function showToast(message) {
+        const toast = el("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+      }
+
+      function addActivity(message, detail = "") {
+        const item = document.createElement("li");
+        const time = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        item.innerHTML = `${escapeHtml(message)}<small>${escapeHtml(detail || time)}</small>`;
+        el("activity").prepend(item);
+        while (el("activity").children.length > 8) {
+          el("activity").lastElementChild.remove();
+        }
+      }
+
+      function loadScenario(key, announce = true) {
+        const item = scenarios[key] || scenarios.outage;
+        el("sample").value = key in scenarios ? key : "outage";
         el("subject").value = item.subject;
         el("message").value = item.message;
         el("customer").value = item.customer;
@@ -659,31 +920,45 @@
         el("users").value = item.users;
         el("revenue").value = item.revenue;
         el("sla").value = item.sla;
-        prioritise();
+        el("owner").value = item.owner;
+        el("playbook").value = item.playbook;
+        renderQueue(key);
+        prioritise(announce ? `Loaded ${item.customer}` : "");
       }
 
       function hits(text, words) {
         return words.filter((word) => text.includes(word));
       }
 
-      function category(text) {
-        if (text.match(/security|breach|password|vulnerability/)) return "Security response";
-        if (text.match(/down|outage|offline|production|crash/)) return "Platform engineering";
-        if (text.match(/invoice|billing|payment|refund|subscription/)) return "Revenue operations";
+      function detectRoute(text) {
+        if (text.match(/security|breach|password|vulnerability|leak/)) return "Security response";
+        if (text.match(/down|outage|offline|production|crash|checkout/)) return "Platform engineering";
+        if (text.match(/invoice|billing|payment|refund|subscription|renewal/)) return "Revenue operations";
+        if (text.match(/login|access|permission|sso|locked/)) return "Identity and access";
         if (text.match(/export|sync|data|report/)) return "Data support";
         return "Customer support";
       }
 
-      function prioritise() {
+      function priorityForScore(score) {
+        if (score >= 82) return { priority: "Critical", slaTarget: 30 };
+        if (score >= 64) return { priority: "High", slaTarget: 120 };
+        if (score >= 42) return { priority: "Medium", slaTarget: 480 };
+        return { priority: "Low", slaTarget: 1440 };
+      }
+
+      function buildResult() {
         const text = `${el("subject").value} ${el("message").value}`.toLowerCase();
         const reasons = [];
         const actions = ["Send acknowledgement with owner and next update time"];
+        const riskFlags = [];
         let score = 18;
         const urgent = hits(text, urgentWords);
         const negative = hits(text, negativeWords);
-        const users = Number(el("users").value || 1);
-        const revenue = Number(el("revenue").value || 0);
-        const sla = Number(el("sla").value || 24);
+        const positive = hits(text, positiveWords);
+        const users = Math.max(1, safeNumber(el("users").value, 1));
+        const revenue = Math.max(0, safeNumber(el("revenue").value, 0));
+        const sla = Math.max(0, safeNumber(el("sla").value, 24));
+        const tier = el("tier").value;
 
         if (urgent.length) {
           score += Math.min(28, 8 + urgent.length * 4);
@@ -692,14 +967,24 @@
         if (negative.length) {
           score += Math.min(16, 5 + negative.length * 3);
           reasons.push(`Customer sentiment risk: ${negative.slice(0, 3).join(", ")}`);
+          riskFlags.push("Customer frustration");
         }
-        if (text.match(/security|breach|password|vulnerability/)) {
+        if (positive.length && !negative.length) {
+          score -= 4;
+        }
+        if (text.match(/security|breach|password|vulnerability|leak/)) {
           score += 24;
           reasons.push("Security-sensitive issue");
+          riskFlags.push("Security-sensitive issue");
         }
-        if (text.match(/down|outage|offline|production|crash/)) {
+        if (text.match(/down|outage|offline|production|crash|checkout/)) {
           score += 20;
           reasons.push("Service availability risk");
+          riskFlags.push("Service availability risk");
+        }
+        if (text.match(/invoice|billing|payment|refund|subscription|renewal/) && revenue > 0) {
+          score += 12;
+          riskFlags.push("Revenue-impacting issue");
         }
         if (users >= 100) {
           score += 18;
@@ -707,10 +992,13 @@
         } else if (users >= 10) {
           score += 10;
           reasons.push(`Team-level impact: ${users} affected users`);
+        } else if (users > 1) {
+          score += 4;
         }
         if (revenue >= 10000) {
           score += 18;
           reasons.push(`High revenue at risk: GBP ${revenue.toLocaleString("en-GB")}`);
+          riskFlags.push("High-value account exposure");
         } else if (revenue >= 1000) {
           score += 10;
           reasons.push(`Revenue at risk: GBP ${revenue.toLocaleString("en-GB")}`);
@@ -718,51 +1006,192 @@
         if (sla <= 1) {
           score += 18;
           reasons.push("SLA breach likely within 1 hour");
+          riskFlags.push("Immediate SLA breach risk");
         } else if (sla <= 4) {
           score += 11;
           reasons.push("SLA breach risk today");
+        } else if (sla <= 24) {
+          score += 5;
         }
 
-        score = Math.max(0, Math.min(100, Math.round(score * (multipliers[el("tier").value] || 1))));
-        let priority = "Low";
-        let slaTarget = 1440;
-        if (score >= 82) {
-          priority = "Critical";
-          slaTarget = 30;
-        } else if (score >= 64) {
-          priority = "High";
-          slaTarget = 120;
-        } else if (score >= 42) {
-          priority = "Medium";
-          slaTarget = 480;
-        }
+        score = Math.max(0, Math.min(100, Math.round(score * (multipliers[tier] || 1))));
+        const { priority, slaTarget } = priorityForScore(score);
+        const route = detectRoute(text);
+        const owner = el("owner").value;
+        const playbook = el("playbook").value;
+        const confidence = Math.min(99, Math.round(58 + reasons.length * 7 + riskFlags.length * 4));
 
-        const route = category(text);
-        if (priority === "Critical" || priority === "High") actions.unshift("Escalate to duty manager");
+        if (priority === "Critical" || priority === "High") {
+          actions.unshift("Escalate to duty manager");
+          actions.push("Create internal incident note with impact and owner");
+        }
         actions.unshift(`Route to ${route}`);
+        actions.push(`Assign ${owner}`);
+        actions.push(`Apply ${playbook} playbook`);
         if (revenue >= 10000) actions.push("Notify customer success owner");
-        if (route === "Security response") actions.push("Apply security handling");
+        if (route === "Security response") actions.push("Apply security handling and limit sensitive details");
 
-        el("priority").textContent = priority;
-        el("priority").className = `priority-${priority.toLowerCase()}`;
-        el("score").textContent = `${score}/100`;
-        el("route").textContent = route.replace(" engineering", "").replace(" response", "");
-        el("slaTarget").textContent = `${slaTarget} min`;
-        el("reasons").innerHTML = (reasons.length ? reasons : ["No major risk language found"])
-          .map((reason) => `<li>${reason}</li>`)
-          .join("");
-        el("actions").innerHTML = actions.map((action) => `<li>${action}</li>`).join("");
-        el("summary").textContent = `${el("customer").value} has a ${priority.toLowerCase()} priority issue routed to ${route}.`;
-        el("reply").textContent = `Suggested reply: We have prioritised this as ${priority} and will provide the next update within ${slaTarget} minutes.`;
+        if (!reasons.length) {
+          reasons.push("No major risk language found; prioritised by baseline SLA policy");
+        }
+
+        return {
+          subject: el("subject").value,
+          message: el("message").value,
+          customer: el("customer").value || "Unknown customer",
+          tier,
+          users,
+          revenue,
+          sla,
+          priority,
+          score,
+          slaTarget,
+          route,
+          owner,
+          playbook,
+          confidence,
+          reasons,
+          actions,
+          riskFlags,
+          urgent,
+          negative,
+        };
       }
 
+      function renderQueue(activeKey = el("sample").value) {
+        el("queue").innerHTML = Object.entries(scenarios)
+          .map(([key, ticket]) => {
+            const active = key === activeKey ? " active" : "";
+            return `<button class="queue-item${active}" type="button" data-scenario="${key}">
+              <strong>${escapeHtml(ticket.customer)}</strong>
+              <span>${escapeHtml(ticket.subject)}</span>
+            </button>`;
+          })
+          .join("");
+        document.querySelectorAll(".queue-item").forEach((button) => {
+          button.addEventListener("click", () => loadScenario(button.dataset.scenario));
+        });
+      }
+
+      function renderChips(result) {
+        const chips = [
+          `${result.confidence}% confidence`,
+          `${result.tier} tier`,
+          `${result.users} users`,
+          `GBP ${result.revenue.toLocaleString("en-GB")} risk`,
+          ...result.riskFlags,
+        ];
+        el("chips").innerHTML = chips.map((chip) => `<span class="chip">${escapeHtml(chip)}</span>`).join("");
+      }
+
+      function prioritise(activityMessage = "Prioritised ticket") {
+        const result = buildResult();
+        latestResult = result;
+
+        el("priority").textContent = result.priority;
+        el("priority").className = `priority-${result.priority.toLowerCase()}`;
+        el("score").textContent = `${result.score}/100`;
+        el("route").textContent = result.route.replace(" engineering", "").replace(" response", "");
+        el("slaTarget").textContent = `${result.slaTarget} min`;
+        el("reasons").innerHTML = result.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("");
+        el("actions").innerHTML = result.actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("");
+        el("summary").textContent =
+          `${result.customer} has a ${result.priority.toLowerCase()} priority issue routed to ${result.route}. ` +
+          `Confidence is ${result.confidence}% with ${result.slaTarget} minutes as the next-update target.`;
+        el("reply").textContent =
+          `Suggested reply: Thanks for raising this. We have prioritised it as ${result.priority}, assigned ${result.owner}, ` +
+          `and will provide the next update within ${result.slaTarget} minutes.`;
+        el("confidenceFill").style.width = `${result.confidence}%`;
+        el("live-status").textContent = `Live scoring updated at ${new Date().toLocaleTimeString("en-GB")}`;
+        renderChips(result);
+
+        if (activityMessage) {
+          addActivity(activityMessage, `${result.priority} | ${result.score}/100 | ${result.route}`);
+        }
+        return result;
+      }
+
+      async function copyReply() {
+        const text = el("reply").textContent.replace("Suggested reply: ", "");
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Reply copied to clipboard");
+        } catch {
+          showToast("Reply ready to copy: select the customer-ready brief text");
+        }
+        addActivity("Copied customer reply", latestResult.customer);
+      }
+
+      function exportJson() {
+        const payload = JSON.stringify(latestResult || buildResult(), null, 2);
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `ticket-priority-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        showToast("JSON export downloaded");
+        addActivity("Exported prioritisation JSON", latestResult.customer);
+      }
+
+      function createEscalation() {
+        const result = latestResult || prioritise("");
+        el("owner").value = result.route === "Security response" ? "Security lead" : "Duty manager";
+        el("playbook").value = result.route === "Security response" ? "Security handling" : "Critical incident";
+        prioritise("");
+        showToast("Escalation created in the operations console");
+        addActivity("Created escalation", `${result.priority} ticket for ${result.customer}`);
+      }
+
+      function assignOwner() {
+        const result = prioritise("");
+        showToast(`${result.owner} assigned`);
+        addActivity("Assigned owner", `${result.owner} using ${result.playbook}`);
+      }
+
+      function sendUpdate() {
+        const result = latestResult || prioritise("");
+        showToast(`Update queued for ${result.customer}`);
+        addActivity("Queued customer update", `Next update within ${result.slaTarget} minutes`);
+      }
+
+      function selectPlan(plan) {
+        showToast(`${plan} plan selected`);
+        addActivity("Pricing plan selected", `${plan} buyer workflow started`);
+        document.querySelectorAll(".plan-button").forEach((button) => {
+          button.textContent = button.dataset.plan === plan ? `${plan} selected` : button.textContent.replace(" selected", "");
+        });
+      }
+
+      fieldIds.forEach((id) => {
+        const input = el(id);
+        input.addEventListener("input", () => prioritise(""));
+        input.addEventListener("change", () => prioritise(`${input.previousElementSibling?.textContent || id} changed`));
+      });
       el("sample").addEventListener("change", (event) => loadScenario(event.target.value));
       el("ticket-form").addEventListener("submit", (event) => {
         event.preventDefault();
-        prioritise();
+        const result = prioritise("Prioritised ticket");
+        showToast(`${result.priority} priority calculated`);
       });
-      el("reset").addEventListener("click", () => loadScenario("outage"));
-      loadScenario("outage");
+      el("reset").addEventListener("click", () => {
+        loadScenario(el("sample").value || "outage");
+        showToast("Scenario reset");
+      });
+      el("copyReply").addEventListener("click", copyReply);
+      el("exportJson").addEventListener("click", exportJson);
+      el("createEscalation").addEventListener("click", createEscalation);
+      el("assignOwner").addEventListener("click", assignOwner);
+      el("sendUpdate").addEventListener("click", sendUpdate);
+      document.querySelectorAll(".plan-button").forEach((button) => {
+        button.addEventListener("click", () => selectPlan(button.dataset.plan));
+      });
+
+      loadScenario("outage", false);
+      addActivity("Demo workspace loaded", "Ready for customer walkthrough");
     </script>
   </body>
 </html>
