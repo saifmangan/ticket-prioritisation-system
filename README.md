@@ -1,86 +1,141 @@
-# Intelligent Support Ticket Prioritisation System
+# Ticket Prioritisation AI
 
-## Overview
-An end-to-end machine learning pipeline that automatically classifies 
-customer support tickets as **urgent vs non-urgent**, enabling faster 
-triage and improved SLA compliance.
+Revenue-aware support triage for teams that need to spot urgent, high-value,
+SLA-sensitive tickets before customers churn.
 
-## Problem Statement
-- High-priority tickets are buried in high ticket volumes
-- Manual triage is inconsistent and doesn't scale
-- Delayed responses reduce customer satisfaction and breach SLAs
+This repo has been upgraded from a notebook prototype into a deployable product
+demo:
 
-## Dataset
-- **Source:** Support Ticket Priority Dataset (50K records)
-- **Type:** Synthetic but business-realistic customer support data
-- **Class distribution:** ~59K non-urgent vs ~7K urgent (imbalanced)
-- **Target variable:** `priority_bin` — 1 (Urgent), 0 (Non-urgent)
+- Explainable priority scoring: `Critical`, `High`, `Medium`, `Low`
+- Business signals: customer tier, affected users, revenue at risk, SLA window
+- Smart routing: security, platform, revenue ops, access, data, or support
+- Optional OpenAI enrichment for customer replies and internal notes
+- FastAPI endpoint for pilots and integrations
+- Streamlit dashboard for live customer demos
+- Static GitHub Pages demo in `docs/`
+- CI, Docker, tests, and deployment workflow
 
-## Pipeline Architecture
+## Live Demo Options
 
-### 1. Data Ingestion
-- Loaded multiple CSV sources (tickets, issues, utterances)
-- Unified schema via joins and aggregation
+### Static customer demo
 
-### 2. Cleaning & Preprocessing
-- Missing value handling
-- Text normalisation
-- Timestamp conversion
-- Deduplication
+Open `docs/index.html` directly, or deploy with GitHub Pages. Once Pages is
+enabled for this repo, the expected URL is:
 
-### 3. Feature Engineering
-**Manual Features:**
-| Feature | Description |
-|---|---|
-| feat_char_len | Message character length |
-| feat_words | Word count |
-| feat_excl | Exclamation mark frequency |
-| feat_urgent | Urgency keyword presence |
-| feat_positive | Positive sentiment indicators |
+```text
+https://saifmangan.github.io/ticket-prioritisation-system/
+```
 
-**NLP Features (TF-IDF):**
-- TF-IDF vectorisation (3,000 features)
-- Unigrams + bigrams
-- English stop-word removal
+The static demo runs fully in the browser and is ideal for first sales calls.
 
-### 4. Modelling
-- **Algorithm:** Logistic Regression (baseline)
-- **Train/Test Split:** 70/30
-- **Class imbalance:** Handled via `class_weight="balanced"`
-- **Evaluation focus:** Recall on urgent class — 
-  missing a critical ticket is costlier than a false alarm
+### Streamlit demo
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+### FastAPI service
+
+```bash
+pip install -r requirements.txt
+uvicorn api:app --reload
+```
+
+Then post a ticket:
+
+```bash
+curl -X POST http://127.0.0.1:8000/prioritise \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Production checkout is down",
+    "message": "URGENT: customers cannot pay and our checkout is down.",
+    "customer": "Northstar Retail",
+    "customer_tier": "enterprise",
+    "affected_users": 480,
+    "revenue_at_risk": 25000,
+    "hours_until_sla": 0.5
+  }'
+```
+
+## Optional AI Briefs
+
+The product works without an API key. To enable LLM-generated summaries,
+customer replies, and internal notes:
+
+```bash
+cp .env.example .env
+export OPENAI_API_KEY="your-key"
+export OPENAI_MODEL="gpt-4o-mini"
+```
+
+The deterministic local prioritiser still produces a fallback brief when no key
+is configured, so demos never fail in front of customers.
+
+## Product Positioning
+
+Sell this as a lightweight triage intelligence layer for B2B support teams:
+
+- Starter: GBP 99/month for shared dashboard triage
+- Growth: GBP 399/month for API access, AI briefs, and weekly risk reporting
+- Enterprise: custom pricing for SSO, audit exports, private deployment, and SLA rules
+
+Best first customers: SaaS support teams, managed service providers, e-commerce
+platforms, fintech support desks, and agencies handling multiple client queues.
 
 ## Project Structure
-```
+
+```text
 ticket-prioritisation-system/
-│
-├── src/
-│   ├── pipeline.py        # Data ingestion & cleaning
-│   ├── features.py        # Manual feature engineering
-│   ├── text_features.py   # TF-IDF vectorisation
-│   └── model.py           # Model training & evaluation
-│
-├── data/
-│   ├── raw/
-│   └── processed/
-│
-├── main.py
-└── README.md
+├── ticket_prioritisation/
+│   ├── prioritizer.py      # Deterministic explainable scoring engine
+│   ├── ai.py               # Optional OpenAI brief generation
+│   └── sample_data.py      # Demo scenarios
+├── api.py                  # FastAPI service
+├── app.py                  # Streamlit demo
+├── docs/index.html         # Static sales/demo page for GitHub Pages
+├── tests/                  # Prioritisation regression tests
+├── Dockerfile
+└── .github/workflows/      # CI and Pages deployment
 ```
 
-## Tech Stack
-- Python, Pandas, NumPy
-- Scikit-Learn (TF-IDF, Logistic Regression)
-- SciPy (sparse matrix combination)
+## Development
 
-## Future Improvements
-- Transformer-based embeddings (BERT) for richer text features
-- Multi-class priority prediction
-- Real-time FastAPI serving layer
-- Streamlit dashboard for support teams
+```bash
+pip install -r requirements-dev.txt
+pytest
+ruff check .
+python main.py --ai
+```
 
-## Skills Demonstrated
-- Data Engineering (ETL, pipeline design)
-- NLP (TF-IDF, text preprocessing)
-- Machine Learning (classification, imbalanced datasets)
-- Reproducible project structure
+## Deployment
+
+### GitHub Pages
+
+The `Deploy customer demo` workflow deploys the `docs/` directory when changes
+land on `main`. In repository settings, set Pages source to GitHub Actions if it
+is not already enabled.
+
+### Docker
+
+```bash
+docker build -t ticket-prioritisation-ai .
+docker run -p 8000:8000 --env-file .env ticket-prioritisation-ai
+```
+
+### Render/Fly/Railway
+
+Use the Dockerfile or run:
+
+```bash
+uvicorn api:app --host 0.0.0.0 --port $PORT
+```
+
+## Original ML Assets
+
+The older notebook and feature-engineering files are kept for model exploration.
+They can be used later to train a supervised classifier from labelled support
+data, while the current product path prioritises a reliable demo and explainable
+business rules.

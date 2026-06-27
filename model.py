@@ -7,8 +7,10 @@ from sklearn.metrics import classification_report
 
 DATA_PATH = Path("data/processed/clean_tickets.csv")
 
+
 def load_data():
     return pd.read_csv(DATA_PATH)
+
 
 def train_model(df: pd.DataFrame):
     feature_cols = [
@@ -16,17 +18,21 @@ def train_model(df: pd.DataFrame):
         "feat_words",
         "feat_excl",
         "feat_urgent",
-        "feat_positive"
+        "feat_positive",
     ]
 
     X = df[feature_cols]
-    y = df["priority"]
+    y = df["priority_bin"] if "priority_bin" in df.columns else df["priority"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42
+        X,
+        y,
+        test_size=0.3,
+        random_state=42,
+        stratify=y if y.nunique() > 1 else None,
     )
 
-    model = LogisticRegression(max_iter=1000)
+    model = LogisticRegression(max_iter=1000, class_weight="balanced")
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
@@ -36,9 +42,11 @@ def train_model(df: pd.DataFrame):
 
     return model
 
+
 def main():
     df = load_data()
     train_model(df)
+
 
 if __name__ == "__main__":
     main()

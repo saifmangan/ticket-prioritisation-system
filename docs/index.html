@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ticket Prioritisation AI</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #5f6f7d;
+        --line: #d8e0e7;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --blue: #2563eb;
+        --teal: #087f7b;
+        --red: #c2410c;
+        --yellow: #b7791f;
+        --green: #15803d;
+        --shadow: 0 16px 34px rgba(23, 32, 42, 0.11);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .topbar {
+        max-width: 1180px;
+        margin: 0 auto;
+        min-height: 68px;
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: conic-gradient(from 210deg, var(--blue), var(--teal), #f59e0b, var(--blue));
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65);
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 14px;
+      }
+
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 20px 56px;
+      }
+
+      .intro {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+        gap: 28px;
+        align-items: stretch;
+      }
+
+      .copy {
+        padding: 10px 0 0;
+      }
+
+      .eyebrow {
+        color: var(--teal);
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      h1 {
+        margin: 12px 0 14px;
+        max-width: 720px;
+        font-size: clamp(38px, 6vw, 72px);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 610px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1.55;
+      }
+
+      .value-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 26px;
+      }
+
+      .value {
+        border-left: 4px solid var(--teal);
+        background: #eefaf8;
+        padding: 12px;
+      }
+
+      .value strong {
+        display: block;
+        font-size: 20px;
+      }
+
+      .value span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 3px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 380px minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 30px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .panel h2,
+      .panel h3 {
+        margin: 0;
+      }
+
+      .form-panel {
+        padding: 18px;
+      }
+
+      label {
+        display: block;
+        color: #34495e;
+        font-size: 13px;
+        font-weight: 700;
+        margin: 14px 0 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #c8d2dc;
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+        padding: 10px 11px;
+      }
+
+      textarea {
+        min-height: 126px;
+        resize: vertical;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        padding: 11px 14px;
+      }
+
+      .primary {
+        background: var(--blue);
+        color: #fff;
+      }
+
+      .secondary {
+        background: #e9eef5;
+        color: var(--ink);
+      }
+
+      .dashboard {
+        overflow: hidden;
+      }
+
+      .dashboard-head {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric {
+        padding: 18px;
+        border-right: 1px solid var(--line);
+        min-height: 105px;
+      }
+
+      .metric:last-child {
+        border-right: 0;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .priority-critical {
+        color: var(--red);
+      }
+
+      .priority-high {
+        color: #b91c1c;
+      }
+
+      .priority-medium {
+        color: var(--yellow);
+      }
+
+      .priority-low {
+        color: var(--green);
+      }
+
+      .dashboard-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+      }
+
+      .section {
+        padding: 20px;
+        border-right: 1px solid var(--line);
+      }
+
+      .section:last-child {
+        border-right: 0;
+      }
+
+      .section h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 19px;
+      }
+
+      li {
+        margin: 8px 0;
+        color: #334155;
+        line-height: 1.4;
+      }
+
+      .brief {
+        margin: 18px 20px 20px;
+        padding: 16px;
+        border: 1px solid #c7d7fe;
+        background: #eef4ff;
+        border-radius: 8px;
+      }
+
+      .brief h3 {
+        margin: 0 0 8px;
+      }
+
+      .brief p {
+        margin: 7px 0;
+        color: #26384d;
+        line-height: 1.45;
+      }
+
+      .demo-strip {
+        margin-top: 26px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .tile {
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+      }
+
+      .tile strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .tile p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .pricing {
+        margin-top: 34px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .price {
+        padding: 20px;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+      }
+
+      .price h3 {
+        margin: 0 0 8px;
+      }
+
+      .price strong {
+        font-size: 30px;
+      }
+
+      .price p {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      footer {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px 32px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 900px) {
+        .intro,
+        .workspace,
+        .dashboard-body,
+        .pricing {
+          grid-template-columns: 1fr;
+        }
+
+        .section,
+        .metric {
+          border-right: 0;
+        }
+
+        .dashboard-head,
+        .value-row,
+        .demo-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        nav {
+          display: none;
+        }
+
+        main {
+          padding-top: 20px;
+        }
+
+        .dashboard-head,
+        .value-row,
+        .demo-strip,
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="topbar">
+        <div class="brand"><span class="mark" aria-hidden="true"></span>Ticket Prioritisation AI</div>
+        <nav aria-label="Primary">
+          <a href="#demo">Demo</a>
+          <a href="#pricing">Pricing</a>
+          <a href="https://github.com/saifmangan/ticket-prioritisation-system">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="headline">
+        <div class="copy">
+          <div class="eyebrow">Support operations command centre</div>
+          <h1 id="headline">Prioritise tickets by urgency, SLA risk, and money at stake.</h1>
+          <p class="lead">
+            A practical AI triage layer for B2B support teams. Paste a customer issue, add business context,
+            and get an explainable priority, route, SLA target, escalation plan, and customer reply.
+          </p>
+          <div class="value-row" aria-label="Commercial outcomes">
+            <div class="value"><strong>30 min</strong><span>critical response target</span></div>
+            <div class="value"><strong>100%</strong><span>explainable score output</span></div>
+            <div class="value"><strong>1 link</strong><span>buyer-ready demo</span></div>
+          </div>
+        </div>
+
+        <div class="panel dashboard" aria-label="Live prioritisation preview">
+          <div class="dashboard-head">
+            <div class="metric"><span>Priority</span><strong class="priority-critical">Critical</strong></div>
+            <div class="metric"><span>Score</span><strong>96/100</strong></div>
+            <div class="metric"><span>Route</span><strong>Platform</strong></div>
+            <div class="metric"><span>SLA</span><strong>30 min</strong></div>
+          </div>
+          <div class="brief">
+            <h3>AI brief</h3>
+            <p>
+              Northstar Retail has a checkout outage affecting hundreds of users with GBP 25,000 revenue at risk.
+              Escalate to the duty manager and route to platform engineering.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="demo" class="workspace" aria-label="Interactive demo">
+        <form class="panel form-panel" id="ticket-form">
+          <h2>Customer ticket</h2>
+          <label for="sample">Demo scenario</label>
+          <select id="sample">
+            <option value="outage">Enterprise checkout outage</option>
+            <option value="billing">Premium billing renewal</option>
+            <option value="security">Security access concern</option>
+            <option value="question">Routine product question</option>
+          </select>
+
+          <label for="subject">Subject</label>
+          <input id="subject" name="subject" />
+
+          <label for="message">Message</label>
+          <textarea id="message" name="message"></textarea>
+
+          <div class="grid-2">
+            <div>
+              <label for="customer">Customer</label>
+              <input id="customer" name="customer" />
+            </div>
+            <div>
+              <label for="tier">Tier</label>
+              <select id="tier" name="tier">
+                <option>standard</option>
+                <option>premium</option>
+                <option>enterprise</option>
+                <option>strategic</option>
+                <option>free</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="users">Affected users</label>
+              <input id="users" type="number" min="1" />
+            </div>
+            <div>
+              <label for="revenue">Revenue at risk (GBP)</label>
+              <input id="revenue" type="number" min="0" />
+            </div>
+          </div>
+
+          <label for="sla">Hours until SLA breach</label>
+          <input id="sla" type="number" min="0" step="0.5" />
+
+          <div class="button-row">
+            <button class="primary" type="submit">Prioritise</button>
+            <button class="secondary" type="button" id="reset">Reset</button>
+          </div>
+        </form>
+
+        <div class="panel dashboard">
+          <div class="dashboard-head">
+            <div class="metric"><span>Priority</span><strong id="priority">Critical</strong></div>
+            <div class="metric"><span>Score</span><strong id="score">96/100</strong></div>
+            <div class="metric"><span>Route</span><strong id="route">Platform</strong></div>
+            <div class="metric"><span>SLA</span><strong id="slaTarget">30 min</strong></div>
+          </div>
+          <div class="dashboard-body">
+            <div class="section">
+              <h3>Reasons</h3>
+              <ul id="reasons"></ul>
+            </div>
+            <div class="section">
+              <h3>Next actions</h3>
+              <ul id="actions"></ul>
+            </div>
+          </div>
+          <div class="brief">
+            <h3>Customer-ready brief</h3>
+            <p id="summary"></p>
+            <p id="reply"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-strip" aria-label="Buyer signals">
+        <div class="tile">
+          <strong>For heads of support</strong>
+          <p>Make escalation decisions consistent across teams, regions, queues, and customer segments.</p>
+        </div>
+        <div class="tile">
+          <strong>For customer success</strong>
+          <p>Flag high-value accounts before churn risk turns into a renewal problem.</p>
+        </div>
+        <div class="tile">
+          <strong>For founders</strong>
+          <p>Start with the static demo, then sell pilots with the API, dashboard, and CRM integration roadmap.</p>
+        </div>
+      </section>
+
+      <section id="pricing" class="pricing" aria-label="Pricing">
+        <div class="price">
+          <h3>Starter</h3>
+          <strong>GBP 99</strong>
+          <p>Per month for small teams that need consistent triage and a shared dashboard.</p>
+        </div>
+        <div class="price">
+          <h3>Growth</h3>
+          <strong>GBP 399</strong>
+          <p>Per month with API access, AI briefs, priority routing, and weekly risk reporting.</p>
+        </div>
+        <div class="price">
+          <h3>Enterprise</h3>
+          <strong>Custom</strong>
+          <p>SSO, audit exports, private model configuration, SLA rules, and white-label deployment.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Built as a deployable customer demo. Configure GitHub Pages or run the FastAPI/Streamlit app for deeper pilots.
+    </footer>
+
+    <script>
+      const scenarios = {
+        outage: {
+          subject: "Production checkout is down",
+          message: "URGENT: customers cannot pay and our checkout is down in production.",
+          customer: "Northstar Retail",
+          tier: "enterprise",
+          users: 480,
+          revenue: 25000,
+          sla: 0.5,
+        },
+        billing: {
+          subject: "Need invoice corrected before renewal",
+          message: "The subscription invoice has the wrong billing address. Please help before renewal.",
+          customer: "BrightWorks",
+          tier: "premium",
+          users: 2,
+          revenue: 1800,
+          sla: 12,
+        },
+        security: {
+          subject: "Possible security breach",
+          message: "We found a password leak and need immediate security help. Please escalate.",
+          customer: "Atlas Finance",
+          tier: "strategic",
+          users: 40,
+          revenue: 8000,
+          sla: 2,
+        },
+        question: {
+          subject: "Export question",
+          message: "Thanks for the great product. Can you explain how account exports work?",
+          customer: "Solo Studio",
+          tier: "standard",
+          users: 1,
+          revenue: 0,
+          sla: 48,
+        },
+      };
+
+      const urgentWords = [
+        "urgent",
+        "asap",
+        "immediate",
+        "critical",
+        "blocked",
+        "down",
+        "outage",
+        "offline",
+        "cannot",
+        "failed",
+        "broken",
+        "unable",
+        "login",
+        "payment",
+        "security",
+        "breach",
+        "production",
+      ];
+      const negativeWords = ["angry", "frustrated", "cancel", "leaving", "escalate", "complaint"];
+      const multipliers = { enterprise: 1.25, strategic: 1.22, premium: 1.15, standard: 1, free: 0.85 };
+
+      const el = (id) => document.getElementById(id);
+
+      function loadScenario(key) {
+        const item = scenarios[key];
+        el("subject").value = item.subject;
+        el("message").value = item.message;
+        el("customer").value = item.customer;
+        el("tier").value = item.tier;
+        el("users").value = item.users;
+        el("revenue").value = item.revenue;
+        el("sla").value = item.sla;
+        prioritise();
+      }
+
+      function hits(text, words) {
+        return words.filter((word) => text.includes(word));
+      }
+
+      function category(text) {
+        if (text.match(/security|breach|password|vulnerability/)) return "Security response";
+        if (text.match(/down|outage|offline|production|crash/)) return "Platform engineering";
+        if (text.match(/invoice|billing|payment|refund|subscription/)) return "Revenue operations";
+        if (text.match(/export|sync|data|report/)) return "Data support";
+        return "Customer support";
+      }
+
+      function prioritise() {
+        const text = `${el("subject").value} ${el("message").value}`.toLowerCase();
+        const reasons = [];
+        const actions = ["Send acknowledgement with owner and next update time"];
+        let score = 18;
+        const urgent = hits(text, urgentWords);
+        const negative = hits(text, negativeWords);
+        const users = Number(el("users").value || 1);
+        const revenue = Number(el("revenue").value || 0);
+        const sla = Number(el("sla").value || 24);
+
+        if (urgent.length) {
+          score += Math.min(28, 8 + urgent.length * 4);
+          reasons.push(`Urgency language detected: ${urgent.slice(0, 4).join(", ")}`);
+        }
+        if (negative.length) {
+          score += Math.min(16, 5 + negative.length * 3);
+          reasons.push(`Customer sentiment risk: ${negative.slice(0, 3).join(", ")}`);
+        }
+        if (text.match(/security|breach|password|vulnerability/)) {
+          score += 24;
+          reasons.push("Security-sensitive issue");
+        }
+        if (text.match(/down|outage|offline|production|crash/)) {
+          score += 20;
+          reasons.push("Service availability risk");
+        }
+        if (users >= 100) {
+          score += 18;
+          reasons.push(`Broad user impact: ${users} affected users`);
+        } else if (users >= 10) {
+          score += 10;
+          reasons.push(`Team-level impact: ${users} affected users`);
+        }
+        if (revenue >= 10000) {
+          score += 18;
+          reasons.push(`High revenue at risk: GBP ${revenue.toLocaleString("en-GB")}`);
+        } else if (revenue >= 1000) {
+          score += 10;
+          reasons.push(`Revenue at risk: GBP ${revenue.toLocaleString("en-GB")}`);
+        }
+        if (sla <= 1) {
+          score += 18;
+          reasons.push("SLA breach likely within 1 hour");
+        } else if (sla <= 4) {
+          score += 11;
+          reasons.push("SLA breach risk today");
+        }
+
+        score = Math.max(0, Math.min(100, Math.round(score * (multipliers[el("tier").value] || 1))));
+        let priority = "Low";
+        let slaTarget = 1440;
+        if (score >= 82) {
+          priority = "Critical";
+          slaTarget = 30;
+        } else if (score >= 64) {
+          priority = "High";
+          slaTarget = 120;
+        } else if (score >= 42) {
+          priority = "Medium";
+          slaTarget = 480;
+        }
+
+        const route = category(text);
+        if (priority === "Critical" || priority === "High") actions.unshift("Escalate to duty manager");
+        actions.unshift(`Route to ${route}`);
+        if (revenue >= 10000) actions.push("Notify customer success owner");
+        if (route === "Security response") actions.push("Apply security handling");
+
+        el("priority").textContent = priority;
+        el("priority").className = `priority-${priority.toLowerCase()}`;
+        el("score").textContent = `${score}/100`;
+        el("route").textContent = route.replace(" engineering", "").replace(" response", "");
+        el("slaTarget").textContent = `${slaTarget} min`;
+        el("reasons").innerHTML = (reasons.length ? reasons : ["No major risk language found"])
+          .map((reason) => `<li>${reason}</li>`)
+          .join("");
+        el("actions").innerHTML = actions.map((action) => `<li>${action}</li>`).join("");
+        el("summary").textContent = `${el("customer").value} has a ${priority.toLowerCase()} priority issue routed to ${route}.`;
+        el("reply").textContent = `Suggested reply: We have prioritised this as ${priority} and will provide the next update within ${slaTarget} minutes.`;
+      }
+
+      el("sample").addEventListener("change", (event) => loadScenario(event.target.value));
+      el("ticket-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        prioritise();
+      });
+      el("reset").addEventListener("click", () => loadScenario("outage"));
+      loadScenario("outage");
+    </script>
+  </body>
+</html>

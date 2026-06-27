@@ -1,0 +1,20 @@
+[project]
+name = "ticket-prioritisation-system"
+version = "1.0.0"
+description = "Revenue-aware AI ticket prioritisation for support teams."
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi==0.115.6",
+  "openai==1.58.1",
+  "pydantic==2.10.4",
+  "streamlit==1.41.1",
+  "uvicorn[standard]==0.34.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
